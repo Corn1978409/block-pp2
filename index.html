@@ -143,24 +143,37 @@
     <div class="level-button-group">
         <button class="level-button" data-level="1">+1</button>
         <div class="level-label">レベル1</div>
-        <div class="level-count" id="count-1">0</div>
+        <div class="level-count" id="count-level1">0</div>
     </div>
     
     <div class="level-button-group">
         <button class="level-button" data-level="2">+1</button>
         <div class="level-label">レベル2</div>
-        <div class="level-count" id="count-2">0</div>
+        <div class="level-count" id="count-level2">0</div>
+    </div>
+    
+    <div class="level-button-group">
+        <button class="level-button" data-level="3">+1</button>
+        <div class="level-label">レベル3</div>
+        <div class="level-count" id="count-level3">0</div>
+    </div>
+    
+    <div class="level-button-group">
+        <button class="level-button" data-level="4">+1</button>
+        <div class="level-label">レベル4</div>
+        <div class="level-count" id="count-level4">0</div>
     </div>
 
     <button id="reset-button">アプリを初期状態に戻す (全データ消去)</button>
 
     <script>
-        // * データ初期値の設定 (他のレベルが必要な場合はここに追加)
+        // * データ初期値の設定 (レベル4まで明確に追加)
         const INITIAL_DATA = {
             blocks: 0,
             level1: 0,
             level2: 0,
-            // level3: 0, ...
+            level3: 0, 
+            level4: 0,
         };
 
         // * 1. データロード機能
@@ -168,7 +181,7 @@
             const storedData = localStorage.getItem('blockStackingData');
             let data = storedData ? JSON.parse(storedData) : INITIAL_DATA;
 
-            // 【✅ 追加】新しいデータ：最後にブロックを積んだ日付と連続日数
+            // 新しいデータ：最後にブロックを積んだ日付と連続日数
             const lastPressDate = localStorage.getItem('lastPressDate');
             const consecutiveStreak = parseInt(localStorage.getItem('consecutiveStreak')) || 0;
 
@@ -184,15 +197,14 @@
         let isButtonDisabled = false; // ボタンが押せない状態か
         
         function saveData() {
-            // ブロックデータの保存
-            localStorage.setItem('blockStackingData', JSON.stringify({
-                blocks: data.blocks,
-                level1: data.level1,
-                level2: data.level2
-                // ... 他のレベルもここに追加 ...
-            }));
+            // ブロックデータの保存 (INITIAL_DATAのキーを使って保存)
+            const dataToSave = {};
+            for (const key in INITIAL_DATA) {
+                dataToSave[key] = data[key];
+            }
+            localStorage.setItem('blockStackingData', JSON.stringify(dataToSave));
             
-            // 【✅ 追加】日付と連続日数の保存
+            // 日付と連続日数の保存
             localStorage.setItem('lastPressDate', lastPressDate);
             localStorage.setItem('consecutiveStreak', consecutiveStreak.toString());
         }
@@ -208,16 +220,16 @@
                 container.appendChild(blockDiv);
             }
 
-            // レベルカウントも更新
-            document.getElementById('count-1').textContent = data.level1;
-            document.getElementById('count-2').textContent = data.level2;
-            // ... 他のレベルの更新 ...
+            // レベルカウントを更新 (IDを明確に指定)
+            document.getElementById('count-level1').textContent = data.level1;
+            document.getElementById('count-level2').textContent = data.level2;
+            document.getElementById('count-level3').textContent = data.level3;
+            document.getElementById('count-level4').textContent = data.level4;
         }
 
-        // * 4. 【✅ 追加】日付と連続日数をチェックするコアロジック
+        // * 4. 日付と連続日数をチェックするコアロジック
         function checkDailyStatus() {
             const today = new Date();
-            // YYYY-MM-DD形式で今日の日付を取得
             const todayYMD = today.toISOString().split('T')[0];
             const mainButton = document.getElementById('main-button');
             
@@ -231,7 +243,6 @@
                 isButtonDisabled = false;
                 
                 if (lastPressDate) {
-                    // 昨日の日付を YYYY-MM-DD形式で取得
                     const yesterday = new Date(today);
                     yesterday.setDate(today.getDate() - 1);
                     const yesterdayYMD = yesterday.toISOString().split('T')[0];
@@ -251,7 +262,7 @@
                 // 6. 【ボーナス計算】連日ボーナスは最大+3（3日目）
                 dailyBonus = Math.min(consecutiveStreak, 3);
                 
-                // 7. ボタンの表示を更新 (例: +3 ブロック (連日: 3日目))
+                // 7. ボタンの表示を更新 
                 mainButton.textContent = `上のグラフに +${dailyBonus} ブロック (連日: ${consecutiveStreak}日目)`;
             }
             
@@ -262,37 +273,33 @@
             saveData(); 
         }
 
-        // * 5. 【✅ 変更】メインボタンのクリック処理 (連日ボーナス適用)
+        // * 5. メインボタンのクリック処理 (連日ボーナス適用)
         document.getElementById('main-button').addEventListener('click', function() {
-            // 1. 無効化されている場合は何もしない
             if (isButtonDisabled || dailyBonus === 0) return;
 
-            // 2. blocks にボーナスブロックを追加
+            // blocks にボーナスブロックを追加
             data.blocks += dailyBonus;
 
-            // 3. 日付と状態を更新して保存
+            // 日付と状態を更新して保存
             const today = new Date();
             lastPressDate = today.toISOString().split('T')[0];
             isButtonDisabled = true;
 
-            // 4. UIを更新し、LocalStorageに保存
+            // UIを更新し、LocalStorageに保存
             updateMainChart();
             saveData();
 
-            // 5. ボタンの表示を更新して無効化
+            // ボタンの表示を更新して無効化
             this.textContent = "本日はブロックを積みました";
             this.disabled = true;
-
-            // 6. （必要ならここにレベルアップ処理を追加）
         });
 
-        // * 6. レベルボタンのクリック処理 (既存の機能)
+        // * 6. レベルボタンのクリック処理
         document.querySelectorAll('.level-button').forEach(button => {
             button.addEventListener('click', function() {
                 const level = this.getAttribute('data-level');
                 const levelKey = `level${level}`;
                 
-                // dataオブジェクトにレベルのキーが存在するか確認
                 if (data.hasOwnProperty(levelKey)) {
                     data[levelKey]++;
                     updateMainChart(); // グラフとレベルカウントを更新
@@ -301,7 +308,7 @@
             });
         });
         
-        // * 7. 【✅ 追加】リセットボタンのクリック処理
+        // * 7. リセットボタンのクリック処理
         document.getElementById('reset-button').addEventListener('click', function() {
             if (confirm("本当にアプリの全データを初期状態に戻しますか？この操作は元に戻せません。")) {
                 localStorage.clear(); // LocalStorageのデータを全て削除
