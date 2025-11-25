@@ -29,10 +29,11 @@
             flex-direction: column;
             align-items: flex-end; /* ブロックを右寄せに積む */
             width: 90%;
-            height: 200px;
+            height: 200px; /* 元の画像の高さに合わせる */
             border-bottom: 2px solid #333;
             margin-bottom: 40px;
             position: relative;
+            justify-content: flex-end; /* ブロックを下から積むようにする */
         }
 
         .block {
@@ -42,6 +43,10 @@
             margin-top: 2px;
             border-radius: 4px;
             transition: all 0.3s ease;
+        }
+        /* 緑色のブロック */
+        .block.green {
+            background-color: #28a745; 
         }
 
         /* * メインボタンのスタイル（1日1回制限用） */
@@ -57,6 +62,7 @@
             box-shadow: 0 4px #0056b3;
             transition: background-color 0.1s;
             cursor: pointer;
+            margin-bottom: 20px; /* 他の要素との間隔 */
         }
 
         #main-button:active {
@@ -71,16 +77,17 @@
             color: #ddd;
         }
 
-        /* * レベルボタンのスタイル */
+        /* * レベルボタンのスタイル (画像2のデザインに合わせる) */
         .level-button-group {
             display: flex;
             align-items: center;
             width: 90%;
             background-color: white;
             padding: 15px;
-            margin-top: 15px;
+            margin-top: 15px; /* レベルボタン間の間隔 */
             border-radius: 10px;
             box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            justify-content: space-between; /* 要素を左右に配置 */
         }
 
         .level-button {
@@ -90,24 +97,29 @@
             border: none;
             border-radius: 8px;
             font-weight: bold;
-            margin-right: 15px;
-            width: 60px;
+            width: 60px; /* ボタンの幅 */
             flex-shrink: 0;
             cursor: pointer;
         }
 
         .level-label {
-            flex-grow: 1;
+            flex-grow: 1; /* ラベルが利用可能なスペースを埋める */
             font-size: 1.1em;
             color: #555;
+            margin-left: 15px; /* ボタンとラベルの間隔 */
         }
 
-        .level-count {
-            font-weight: bold;
-            color: #007bff;
-            width: 30px;
-            text-align: right;
-            flex-shrink: 0;
+        /* レベルゲージ表示用のスタイル (画像2の青い四角) */
+        .level-gauge {
+            width: 20px; /* 青い四角の幅 */
+            height: 20px; /* 青い四角の高さ */
+            background-color: #007bff; /* 青色 */
+            border-radius: 4px;
+            margin-left: 10px;
+            display: none; /* 初期状態では非表示 */
+        }
+        .level-gauge.active {
+            display: block; /* アクティブなときに表示 */
         }
         
         /* * リセットボタンのスタイル */
@@ -143,25 +155,25 @@
     <div class="level-button-group">
         <button class="level-button" data-level="1">+1</button>
         <div class="level-label">レベル1</div>
-        <div class="level-count" id="count-level1">0</div>
+        <div class="level-gauge" id="gauge-level1"></div>
     </div>
     
     <div class="level-button-group">
         <button class="level-button" data-level="2">+1</button>
         <div class="level-label">レベル2</div>
-        <div class="level-count" id="count-level2">0</div>
+        <div class="level-gauge" id="gauge-level2"></div>
     </div>
     
     <div class="level-button-group">
         <button class="level-button" data-level="3">+1</button>
         <div class="level-label">レベル3</div>
-        <div class="level-count" id="count-level3">0</div>
+        <div class="level-gauge" id="gauge-level3"></div>
     </div>
     
     <div class="level-button-group">
         <button class="level-button" data-level="4">+1</button>
         <div class="level-label">レベル4</div>
-        <div class="level-count" id="count-level4">0</div>
+        <div class="level-gauge" id="gauge-level4"></div>
     </div>
 
     <button id="reset-button">アプリを初期状態に戻す (全データ消去)</button>
@@ -170,7 +182,7 @@
         // * データ初期値の設定 (レベル4まで明確に追加)
         const INITIAL_DATA = {
             blocks: 0,
-            level1: 0,
+            level1: 0, // レベル1の達成回数（青ゲージの回数）
             level2: 0,
             level3: 0, 
             level4: 0,
@@ -217,14 +229,18 @@
             for (let i = 0; i < data.blocks; i++) {
                 const blockDiv = document.createElement('div');
                 blockDiv.className = 'block';
+                // 仮で緑色のブロックを交互に配置 (元の画像に合わせる)
+                if (i % 2 === 1) { 
+                    blockDiv.classList.add('green');
+                }
                 container.appendChild(blockDiv);
             }
 
-            // レベルカウントを更新 (IDを明確に指定)
-            document.getElementById('count-level1').textContent = data.level1;
-            document.getElementById('count-level2').textContent = data.level2;
-            document.getElementById('count-level3').textContent = data.level3;
-            document.getElementById('count-level4').textContent = data.level4;
+            // レベルゲージを更新 (data.levelXが0より大きい場合に表示)
+            document.getElementById('gauge-level1').classList.toggle('active', data.level1 > 0);
+            document.getElementById('gauge-level2').classList.toggle('active', data.level2 > 0);
+            document.getElementById('gauge-level3').classList.toggle('active', data.level3 > 0);
+            document.getElementById('gauge-level4').classList.toggle('active', data.level4 > 0);
         }
 
         // * 4. 日付と連続日数をチェックするコアロジック
@@ -302,7 +318,7 @@
                 
                 if (data.hasOwnProperty(levelKey)) {
                     data[levelKey]++;
-                    updateMainChart(); // グラフとレベルカウントを更新
+                    updateMainChart(); // グラフとレベルゲージを更新
                     saveData();
                 }
             });
