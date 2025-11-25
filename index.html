@@ -27,7 +27,7 @@
         #chart-container {
             display: flex;
             flex-direction: column;
-            align-items: flex-end; /* ブロックを右寄せに積む */
+            align-items: flex-start; /* ✅ 左側から積むように修正 */
             width: 90%;
             height: 200px; /* 元の画像の高さに合わせる */
             border-bottom: 2px solid #333;
@@ -190,14 +190,19 @@
 
         // * 1. データロード機能
         function loadData() {
-            const storedData = localStorage.getItem('blockStackingData');
-            let data = storedData ? JSON.parse(storedData) : INITIAL_DATA;
+            try {
+                const storedData = localStorage.getItem('blockStackingData');
+                let data = storedData ? JSON.parse(storedData) : INITIAL_DATA;
 
-            // 新しいデータ：最後にブロックを積んだ日付と連続日数
-            const lastPressDate = localStorage.getItem('lastPressDate');
-            const consecutiveStreak = parseInt(localStorage.getItem('consecutiveStreak')) || 0;
+                // 新しいデータ：最後にブロックを積んだ日付と連続日数
+                const lastPressDate = localStorage.getItem('lastPressDate');
+                const consecutiveStreak = parseInt(localStorage.getItem('consecutiveStreak')) || 0;
 
-            return { ...data, lastPressDate, consecutiveStreak };
+                return { ...data, lastPressDate, consecutiveStreak };
+            } catch (e) {
+                console.error("データロードエラー:", e);
+                return { ...INITIAL_DATA, lastPressDate: null, consecutiveStreak: 0 };
+            }
         }
 
         // * 2. データ保存機能
@@ -209,16 +214,21 @@
         let isButtonDisabled = false; // ボタンが押せない状態か
         
         function saveData() {
-            // ブロックデータの保存 (INITIAL_DATAのキーを使って保存)
-            const dataToSave = {};
-            for (const key in INITIAL_DATA) {
-                dataToSave[key] = data[key];
+            try {
+                // ブロックデータの保存 (INITIAL_DATAのキーを使って保存)
+                const dataToSave = {};
+                for (const key in INITIAL_DATA) {
+                    // データが未定義の場合に備えて初期値を使用
+                    dataToSave[key] = data[key] !== undefined ? data[key] : INITIAL_DATA[key];
+                }
+                localStorage.setItem('blockStackingData', JSON.stringify(dataToSave));
+                
+                // 日付と連続日数の保存
+                localStorage.setItem('lastPressDate', lastPressDate);
+                localStorage.setItem('consecutiveStreak', consecutiveStreak.toString());
+            } catch (e) {
+                console.error("データ保存エラー:", e);
             }
-            localStorage.setItem('blockStackingData', JSON.stringify(dataToSave));
-            
-            // 日付と連続日数の保存
-            localStorage.setItem('lastPressDate', lastPressDate);
-            localStorage.setItem('consecutiveStreak', consecutiveStreak.toString());
         }
 
         // * 3. グラフ描画機能 (blocksの数に応じてグラフを更新)
